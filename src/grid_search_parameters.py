@@ -26,7 +26,7 @@ LB_DAYS = 1* 12 * 20 * 24   # (years * months * days * hours)
 # LB_DAYS = 2 * 12 * 20   # (years * months * days)
 
 TRANSFORMATIONS = [
-    # "log", 
+    "log", 
     # "root3", 
     # "outl+log", 
     # "outl+root3", 
@@ -38,11 +38,11 @@ MODELS = [
     # HoltWinters(), # lui non runna, fullbacka sul modello di fullback
     # Croston(),
     # SeasonalNaive(season_length=7, alias="SeasNaive_sl7"),
-    # HistoricAverage(),
+    HistoricAverage(),
     # DOT(season_length=1 , alias = 'DOT_sl1'),
     # DOT(season_length=7 , alias = 'DOT_sl7'),
-    # Naive(),
-    # ARIMA((3,1,5)),
+    Naive(),
+    ARIMA((3,1,5)),
     AutoARIMA(seasonal = False),
     # AutoETS(model='AZN'),
     # GARCH(1,1),

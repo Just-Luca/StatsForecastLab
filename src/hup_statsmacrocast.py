@@ -84,19 +84,19 @@ class HupStatsMacrocast:
         for horizon, transformation, model in itertools.product(
                 self.horizons, self.transformations, self.models
             ):
-            print("check 1")
+            # print("check 1")
             df_train, _, cv_results_path, sf, model_name = self._train_loop(
                 horizon,
                 transformation,
                 model
             )
-            print("check 2")
+            # print("check 2")
 
             n_windows = utils.get_n_windows(
                 data_frame=df_train,
                 horizon=horizon
             )
-            print("check 3")
+            # print("check 3")
 
             if cv_results_path.is_file():
                 df_old_cv = (
@@ -106,7 +106,7 @@ class HupStatsMacrocast:
                 )
             else:
                 df_old_cv = pd.DataFrame()
-            print("check 4")
+            # print("check 4")
 
             if model_name not in df_old_cv.columns:
                 df_cross = sf.cross_validation(
@@ -115,14 +115,14 @@ class HupStatsMacrocast:
                     n_windows=n_windows, 
                     step_size=horizon
                 )
-                print("check 5")
+                # print("check 5")
                 
                 df_cross_new = (
                     utils.apply_inverse_transformation_to_dataframe(df_cross, transformation)
                     .assign(ds=lambda x: pd.to_datetime(x["ds"]))
                     .assign(cutoff=lambda x: pd.to_datetime(x["cutoff"]))
                 )
-                print("check 6")
+                # print("check 6")
                 
                 if not df_old_cv.empty:
 
@@ -132,11 +132,11 @@ class HupStatsMacrocast:
                         .rename(columns={"y_new": "y"})
                         .drop(columns=['y_old'])
                     )
-                    print("check 7")
+                    # print("check 7")
 
                 else:
                     _dfcv = df_cross_new
-                print("check 8")
+                # print("check 8")
                 
                 _dfcv.to_csv(cv_results_path, index=False, encoding="utf-8")
             else:
