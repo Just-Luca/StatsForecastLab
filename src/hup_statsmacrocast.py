@@ -503,7 +503,7 @@ class HupStatsMacrocast:
         sf = StatsForecast(
             models=[model],
             n_jobs=-1,
-            freq="B",
+            freq="h",
             fallback_model=SeasonalNaive(season_length=1, alias=f"SeasNaive_sl1_{model.alias}"),
             verbose=True
         )
