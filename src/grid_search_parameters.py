@@ -15,10 +15,9 @@ from statsforecast.models import (
 )
 
 HORIZONS = [
-    # 20, 
-    # 10,
+    72,
+    48,
     24,
-    # 2
 ]
 
 # @TODO: lb_days and horizons should be calculated automatically
@@ -26,7 +25,7 @@ LB_DAYS = 1* 12 * 20 * 24   # (years * months * days * hours)
 # LB_DAYS = 2 * 12 * 20   # (years * months * days)
 
 TRANSFORMATIONS = [
-    "log", 
+    # "log", 
     # "root3", 
     # "outl+log", 
     # "outl+root3", 
@@ -38,13 +37,16 @@ MODELS = [
     # HoltWinters(), # lui non runna, fullbacka sul modello di fullback
     # Croston(),
     # SeasonalNaive(season_length=7, alias="SeasNaive_sl7"),
-    HistoricAverage(),
+    # HistoricAverage(),
     # DOT(season_length=1 , alias = 'DOT_sl1'),
     # DOT(season_length=7 , alias = 'DOT_sl7'),
     Naive(),
-    ARIMA((3,1,5)),
-    AutoARIMA(seasonal = False),
-    # AutoETS(model='AZN'),
+    ARIMA((3,1,5), alias = 'ARIMA'),
+    ARIMA(season_length = 24, alias = 'ARIMA_sl24'),
+    AutoARIMA(seasonal=False),
+    AutoARIMA(season_length = 24, alias = 'AutoARIMA_sl24'),
+    AutoETS(alias = 'AutoETS'),
+    AutoETS(season_length = 24, alias = 'AutoETS_sl24'),
     # GARCH(1,1),
     # GARCH(2,1),
     # GARCH(2,2)
