@@ -21,8 +21,8 @@ import pandas as pd
 
 os.environ.setdefault("NIXTLA_ID_AS_COL", "1")
 
-# LabForecast could be the right name?
-class HupStatsMacrocast:
+# LabStatsForecast could be the right name?
+class LabStatsForecast:
 
     def __init__(
             self,
@@ -149,12 +149,12 @@ class HupStatsMacrocast:
             metric: str = "mae",
             result: str ='forecast', 
             eval_horizon: int = cnsts.EVAL_HORIZONS[0], 
-            countries=None,
+            unique_ids=None,
             actual: bool=False
         ):
         
-        if countries is None:
-            countries = utils.get_id()
+        if unique_ids is None:
+            unique_ids = utils.get_id()
         else:
             pass
 
@@ -164,7 +164,7 @@ class HupStatsMacrocast:
                 horizon=horizon,
                 result=result,
                 metric=metric,
-                countries=countries
+                unique_ids=unique_ids
             )
 
         else:
@@ -177,7 +177,7 @@ class HupStatsMacrocast:
             horizon=horizon,
             result='crossval',
             metric=metric,
-            countries=countries
+            unique_ids=unique_ids
         )
 
         match result:
@@ -198,7 +198,7 @@ class HupStatsMacrocast:
 
             case 'metrics':
                 return self._metrics_plot(
-                    countries=countries,
+                    unique_ids=unique_ids,
                     horizon=horizon,
                 )
             case _:
@@ -272,8 +272,16 @@ class HupStatsMacrocast:
             self,
             horizon: int = gsp.HORIZONS[0],
             metric: str = "mae",
-            result: str = "forecast"
+            result: str = "forecast",
+            unique_ids=None
         ):
+
+        if unique_ids is None:
+            unique_ids = utils.get_id()
+        else:
+            pass
+
+        ids = utils.id_control(unique_ids)
 
         self.best_model_metric_evaluation(result=result)
         
@@ -313,12 +321,13 @@ class HupStatsMacrocast:
                 raise ValueError(f"Invalid metric specified: {metric}. Choose from {cnsts.valid_metrics}.")
 
         min_mape_idx = metric_results_df.groupby('unique_id')['metric_value'].idxmin()
-        return metric_results_df.loc[min_mape_idx].reset_index(drop=True)
+        final_metric_results_df = metric_results_df.loc[min_mape_idx].reset_index(drop=True)
+        return final_metric_results_df[final_metric_results_df['unique_id'].isin(ids)].reset_index(drop=True)
 
 
     def best_results_summary(
             self,
-            metric: str = "mape",
+            metric: str = "mae",
             result: str = "forecast"
         ):
 
@@ -376,15 +385,15 @@ class HupStatsMacrocast:
             horizon: int = gsp.HORIZONS[0],
             metric: str = "mape",
             result: str ="forecast", 
-            countries=None
+            unique_ids=None
         ):
 
-        if countries is None:
-            countries = utils.get_id()
+        if unique_ids is None:
+            unique_ids = utils.get_id()
         else:
             pass
 
-        ids = utils.id_control(countries)
+        ids = utils.id_control(unique_ids)
 
         metric_best_results_df = self.best_results_metric_dataframe(
             horizon=horizon,
@@ -472,7 +481,7 @@ class HupStatsMacrocast:
                 filtered_data.append(filtered_rows)
 
             filtered_df = pd.concat(filtered_data, ignore_index=True)
-            filtered_df = filtered_df.rename(columns={'y': 'volatility'})
+            filtered_df = filtered_df.rename(columns={'y': 'value'})
             filtered_df = filtered_df.iloc[:, [4, 0, 1, 2, 3]]
 
         return filtered_df[filtered_df['unique_id'].isin(ids)].reset_index(drop=True)
@@ -608,7 +617,7 @@ class HupStatsMacrocast:
         n_rows = math.ceil(n_plots / n_cols)  
 
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(15 * n_cols, 7 * n_rows), squeeze=False)
-        fig.suptitle("Forecast Plot", fontsize=55) # @TODO: the title should be "Forecast {data title} Plot"
+        fig.suptitle(f"Forecast {cnsts.DATA_NAME} Plot", fontsize=55) # @TODO: the title should be "Forecast {data title} Plot"
 
         # Flatten the axes array for easier iteration
         axes = axes.flatten() 
@@ -712,7 +721,7 @@ class HupStatsMacrocast:
         n_rows = math.ceil(n_plots / n_cols)  
 
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(15 * n_cols, 7 * n_rows), squeeze=False)
-        fig.suptitle("CrossValidation Volatility Plot", fontsize=55)
+        fig.suptitle(f"CrossValidation {cnsts.DATA_NAME} Plot", fontsize=55)
 
         # Flatten the axes array for easier iteration
         axes = axes.flatten() 
@@ -775,16 +784,16 @@ class HupStatsMacrocast:
 
     def _metrics_plot(
             self,
-            countries=None,
+            unique_ids=None,
             horizon: int = gsp.HORIZONS[0],
         ):
 
-        if countries is None:
-            countries = utils.get_id()
+        if unique_ids is None:
+            unique_ids = utils.get_id()
         else:
             pass   
 
-        ids = utils.id_control(countries)
+        ids = utils.id_control(unique_ids)
 
         plt.style.use('default')  
         plt.rcdefaults()
@@ -835,8 +844,8 @@ class HupStatsMacrocast:
                 )
 
             plt.ylim((0,1))
-            plt.xlabel('countries')
-            plt.ylabel(f'mean normalized volatility')
+            plt.xlabel('unique_ids')
+            plt.ylabel(f'mean normalized value')
             plt.title(f'metric plot: "{metric}" - horizon = {horizon}', fontsize=15)
             plt.xticks(rotation=45) 
             plt.legend(title='best model', loc='upper left')
@@ -864,7 +873,7 @@ class HupStatsMacrocast:
             )
 
         plt.ylim((0,110))
-        plt.xlabel('countries')
+        plt.xlabel('unique_ids')
         plt.title(f'metric plot: "smape" - horizon = {horizon}', fontsize=15)
         plt.legend(title='best model', loc='upper left')
         plt.grid(axis='y', alpha=0.25)

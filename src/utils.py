@@ -227,15 +227,15 @@ def id_control(inserted_id):
         if isinstance(country_input, list):
             return all(nome in country_list for nome in country_input)
         
-    countries = get_id()
+    unique_ids = get_id()
 
-    if is_present(countries, ids):
+    if is_present(unique_ids, ids):
         pass
     else:
         raise TypeError(
             f'The desired data are not available, got {inserted_id}.'
-                + "\n Here a list of possible countries: \n"
-                + f"{countries}"
+                + "\n Here a list of possible unique_ids: \n"
+                + f"{unique_ids}"
             )
     
     return ids

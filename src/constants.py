@@ -7,6 +7,11 @@ CSV_FOLDER = Path.cwd().parent / "StatsForecast" / "results_norm"
 DATA_PATH = Path.cwd().parent / "StatsForecast" / "data" / "ETTh.csv"
 # DATA_PATH = Path.cwd().parent / "StatsForecast" / "data" / "volatility_Europe_garch_1_1.csv"
 
+DATA_NAME = "ETTh"  # @TODO: this should be automatically extracted from the DATA_PATH
+
+# just_cool_unique_ids
+JCUIds = ["HUFL", "HULL", "LUFL", "MUFL"]
+
 EVAL_HORIZONS = [
     24, 
     # 7, 
