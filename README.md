@@ -12,7 +12,7 @@
 
 **StatsForecastLab** is a structured pipeline for experimenting with statistical forecasting models, feature transformations, and forecast horizons. It provides a high-level orchestration layer on top of [Nixtla's StatsForecast](https://github.com/Nixtla/statsforecast) library, enabling systematic benchmarking, automated model selection, and reproducible forecasting experiments.
 
-The framework is designed for data scientists and ML engineers who need to move quickly from hypothesis to production — running controlled experiments across multiple models and configurations while automatically identifying the best-performing setup.
+The framework is designed for data scientists and ML engineers who need to move quickly from hypothesis to production, running controlled experiments across multiple models and configurations while automatically identifying the best-performing setup.
 
 **StatsForecastLab does not re-implement any forecasting models.** All core statistical models are provided by Nixtla StatsForecast. This project builds an experimentation and orchestration layer on top of that foundation.
 
