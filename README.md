@@ -387,7 +387,7 @@ If you use StatsForecastLab in your research or production work, please cite bot
 @software{statsforecastlab,
   title   = {StatsForecastLab: Statistical Forecast Laboratory},
   year    = {2024},
-  url     = {https://github.com/your-org/StatsForecastLab}
+  url     = {https://github.com/Just-Luca/StatsForecastLab}
 }
 ```
 
