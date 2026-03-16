@@ -46,7 +46,7 @@ StatsForecastLab follows three core principles:
 User Configuration (constants.py, grid_search_parameters.py)
          │
          ▼
-  StatsForecastLab (hup_statsmacrocast.py)
+  StatsForecastLab (statsforecastlab.py)
          │
     ┌────┴────┐
     │         │
