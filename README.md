@@ -1,4 +1,4 @@
-# StatsForecastLab — Statistical Forecast Laboratory
+# StatsForecastLab - Statistical Forecast Laboratory
 
 > A production-oriented experimentation framework for statistical time series forecasting, built on top of [Nixtla StatsForecast](https://github.com/Nixtla/statsforecast).
 
