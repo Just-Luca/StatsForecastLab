@@ -3,12 +3,14 @@ csv_container/
 csv_container_hup/
 lightning_logs/
 /TSFM/models/Moment/models
+/data
+/results
+/results_norm
 data_url.py
-
-# notebooks/training_copy.ipynb
 *.csv
-test_neuralmacrocast_metrics.ipynb
-tester.ipynb
+
+# notebooks
+*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
