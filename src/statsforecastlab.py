@@ -161,6 +161,10 @@ class StatsForecastLab:
         else:
             pass
         
+        @TODO: probabilmente nella definizione della classe sarebbe opportuno inserire un parametro bool chiamato "test"; if true tutto rimane com'è, e la cross validation rimane un po' ridondante; if false allora bisogna modificare anche process data, perché non ha senso testare prediction() su dati passati
+        se result == 'forecast' and df_crossval = empty allora plot solo forecast (senza calcolo metriche)
+        se invece df_crossval != empty plot del best forecast
+
         # crossvalidation (cv) is needed to decide which model is the best. 
         # but, if there is only one model, then cv is kinda useless.
         # NB: this function does not work if cv is not performed. @TODO We need to adjust this!
@@ -358,7 +362,7 @@ class StatsForecastLab:
 
             data = {
                 'transformation': transformation,
-                'horizon (days)': horizon,
+                'horizon': horizon,
                 metric_column_name: [m_metric]
             }
             
@@ -366,8 +370,8 @@ class StatsForecastLab:
             results_df = pd.concat([results_df, new_df], ignore_index=True)
 
         # from results_df, for each horizon saves only the best value of the metrics       
-        min_mape_idx = results_df.groupby('horizon (days)')[metric_column_name].idxmin()
-        return results_df.loc[min_mape_idx].sort_values('horizon (days)', ascending=False).reset_index(drop=True)
+        min_mape_idx = results_df.groupby('horizon')[metric_column_name].idxmin()
+        return results_df.loc[min_mape_idx].sort_values('horizon', ascending=False).reset_index(drop=True)
 
 
     # it returns the best results of the training, whether they are crossvalidation or forecast results. one can choose which product and client display and which metric use in order to establish the "best" results
