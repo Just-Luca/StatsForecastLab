@@ -25,17 +25,20 @@ class StatsForecastLab:
 
     def __init__(
             self,
+            freq: str,
             horizons: list = gsp.HORIZONS,
             transformations: list = gsp.TRANSFORMATIONS,
             models: list = gsp.MODELS,
-            normalization: bool = False
+            normalization: bool = False,
+            test: bool = False
         ) -> None:
 
         self.horizons = horizons
         self.transformations = transformations
         self.models = models
+        self.freq = freq
         self.normalization = normalization
-
+        self.test = test
 
     def predict(self):
 
@@ -161,9 +164,9 @@ class StatsForecastLab:
         else:
             pass
         
-        @TODO: probabilmente nella definizione della classe sarebbe opportuno inserire un parametro bool chiamato "test"; if true tutto rimane com'è, e la cross validation rimane un po' ridondante; if false allora bisogna modificare anche process data, perché non ha senso testare prediction() su dati passati
-        se result == 'forecast' and df_crossval = empty allora plot solo forecast (senza calcolo metriche)
-        se invece df_crossval != empty plot del best forecast
+        # @TODO: probabilmente nella definizione della classe sarebbe opportuno inserire un parametro bool chiamato "test"; if true tutto rimane com'è, e la cross validation rimane un po' ridondante; if false allora bisogna modificare anche process data, perché non ha senso testare prediction() su dati passati
+        # se result == 'forecast' and df_crossval = empty allora plot solo forecast (senza calcolo metriche)
+        # se invece df_crossval != empty plot del best forecast
 
         # crossvalidation (cv) is needed to decide which model is the best. 
         # but, if there is only one model, then cv is kinda useless.
@@ -202,7 +205,7 @@ class StatsForecastLab:
 
     def best_model_metric_evaluation(
             self,
-            result: str = "forecast"
+            result: str = "forecast", 
         ):
         
         for horizon, transformation in itertools.product(
@@ -211,7 +214,8 @@ class StatsForecastLab:
 
             _, df_train, _ = utils.process_data(
                 transformation=transformation,
-                normalization=self.normalization
+                normalization=self.normalization,
+                test=self.test
             )        
 
             n_windows = utils.get_n_windows(
@@ -286,7 +290,8 @@ class StatsForecastLab:
 
             _, df_train, _ = utils.process_data(
                 transformation=transformation,
-                normalization=self.normalization
+                normalization=self.normalization,
+                test=self.test
             )
         
             n_windows = utils.get_n_windows(
@@ -336,7 +341,8 @@ class StatsForecastLab:
 
             _, df_train, _ = utils.process_data(
                 transformation=transformation,
-                normalization=self.normalization
+                normalization=self.normalization,
+                test=self.test
             )
         
             n_windows = utils.get_n_windows(
@@ -406,7 +412,8 @@ class StatsForecastLab:
 
                 _, df_train, _ = utils.process_data(
                     transformation=transformation,
-                    normalization=self.normalization
+                    normalization=self.normalization,
+                    test=self.test
                 )
             
                 n_windows = utils.get_n_windows(
@@ -446,7 +453,8 @@ class StatsForecastLab:
 
                 _, df_train, _ = utils.process_data(
                     transformation=transformation,
-                    normalization=self.normalization
+                    normalization=self.normalization,
+                    test=self.test
                 )
             
                 n_windows = utils.get_n_windows(
@@ -491,7 +499,8 @@ class StatsForecastLab:
 
         _, df_train, _ = utils.process_data(
             transformation=transformation,
-            normalization=self.normalization
+            normalization=self.normalization,
+            test=self.test
         )
 
         # cross validation
@@ -507,7 +516,7 @@ class StatsForecastLab:
         sf = StatsForecast(
             models=[model],
             n_jobs=-1,
-            freq="h", # @TODO: frequency should be taken as input from user (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
+            freq=self.freq, # @TODO: frequency should be taken as input from user (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
             fallback_model=SeasonalNaive(season_length=1, alias=f"SeasNaive_sl1_{model.alias}"),
             verbose=True
         )
@@ -574,7 +583,8 @@ class StatsForecastLab:
         self._apply_plot_style(cnsts.DARK_STYLE)
 
         df_actual, df_train, _ = utils.process_data(
-            normalization=self.normalization
+            normalization=self.normalization,
+            test=self.test
         )
 
         df_actual = df_actual.assign(ds=lambda x: pd.to_datetime(x["ds"]))
@@ -682,7 +692,8 @@ class StatsForecastLab:
         self._apply_plot_style(cnsts.DARK_STYLE)
 
         _, df_train, _ = utils.process_data(
-            normalization=self.normalization
+            normalization=self.normalization,
+            test=self.test
         )
 
         df_train = df_train.assign(ds=lambda x: pd.to_datetime(x["ds"]))
@@ -796,7 +807,8 @@ class StatsForecastLab:
         selected_metrics = ['mae', 'rmse']
 
         _, df_train, _ = utils.process_data(
-            normalization=self.normalization
+            normalization=self.normalization,
+            test=self.test
         )
 
         # create one new dataframe for each metrc
@@ -850,16 +862,16 @@ class StatsForecastLab:
 
         plt.figure(figsize=(10, 6))
 
-        df_best_results_mape = self.best_results_metric_dataframe(
+        df_best_results_smape = self.best_results_metric_dataframe(
             horizon=horizon,
             metric="smape",
         )
 
-        df_best_results_mape = df_best_results_mape[df_best_results_mape['unique_id'].isin(ids)]
+        df_best_results_smape = df_best_results_smape[df_best_results_smape['unique_id'].isin(ids)]
 
-        for best_model in df_best_results_mape.sort_values('best_model')['best_model'].unique():
+        for best_model in df_best_results_smape.sort_values('best_model')['best_model'].unique():
 
-            subset = df_best_results_mape[df_best_results_mape['best_model'] == best_model]
+            subset = df_best_results_smape[df_best_results_smape['best_model'] == best_model]
             plt.bar(
                 subset.query('metric == "smape"')['unique_id'], 
                 subset.query('metric == "smape"')['metric_value'], 

@@ -180,7 +180,8 @@ def _load_data():
 
 def process_data(
         transformation: str = "identity",
-        normalization: bool = False
+        normalization: bool = False,
+        test: bool = False
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     """
@@ -200,14 +201,18 @@ def process_data(
 
     df_actual = apply_transformation_to_dataframe(df, transformation)
 
-    split_date = df["ds"].max() - pd.DateOffset(months=cnsts.TEST_SIZE)
+    if test:
+        split_date = df["ds"].max() - pd.DateOffset(months=cnsts.TEST_SIZE)
 
-    _df_train = df[df['ds'] < split_date].reset_index(drop=True)
+        _df_train = df[df['ds'] < split_date].reset_index(drop=True)
 
-    df_train = apply_transformation_to_dataframe(_df_train, transformation)
-    df_test = df[df['ds'] >= split_date].reset_index(drop=True)
+        df_train = apply_transformation_to_dataframe(_df_train, transformation)
+        df_test = df[df['ds'] >= split_date].reset_index(drop=True)
 
-    return df_actual, df_train, df_test
+        return df_actual, df_train, df_test
+    
+    else:
+        return df_actual, df_actual, df_actual
 
 
 def get_id():
