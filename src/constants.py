@@ -12,6 +12,22 @@ DATA_NAME = "ETTh"  # @TODO: this should be automatically extracted from the DAT
 # just_cool_unique_ids
 JCUIds = ["HUFL", "HULL", "LUFL", "MUFL"]
 
+# (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
+FREQUENCIES = [
+    # 'B',    # business day frequency
+    # 'D',    # calendar day frequency
+    # 'W',    # weekly frequency
+    # 'M',    # monthly frequency
+    # 'Q',    # quarterly frequency
+    # 'Y',    # yearly frequency
+    'h',    # hourly frequency
+    # 'min',  # minutely frequency
+    # 's',    # secondly frequency
+    # 'ms',   # milliseconds
+    # 'us',   # microseconds
+    # 'ns',   # nanoseconds
+]
+
 EVAL_HORIZONS = [
     24, 
     # 7, 
@@ -27,7 +43,6 @@ valid_metrics = ['mae', 'mape', 'rmse', 'smape', "norm_mae"]
 LOW_QUANTILE = 0.025
 UP_QUANTILE = 0.975
 
-# @TODO: add more models (ARIMA_sl24, AutoARIMA_sl24, AutoETS, AutoETS_sl24)
 COLORS = {
     'HoltWinters': '#98df8a', 
     'Croston': '#ff7f0e', 

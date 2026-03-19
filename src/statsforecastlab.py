@@ -25,7 +25,7 @@ class StatsForecastLab:
 
     def __init__(
             self,
-            freq: str,
+            freq: str = cnsts.FREQUENCIES[0],
             horizons: list = gsp.HORIZONS,
             transformations: list = gsp.TRANSFORMATIONS,
             models: list = gsp.MODELS,
@@ -33,10 +33,10 @@ class StatsForecastLab:
             test: bool = False
         ) -> None:
 
+        self.freq = freq
         self.horizons = horizons
         self.transformations = transformations
         self.models = models
-        self.freq = freq
         self.normalization = normalization
         self.test = test
 
@@ -164,9 +164,9 @@ class StatsForecastLab:
         else:
             pass
         
-        # @TODO: probabilmente nella definizione della classe sarebbe opportuno inserire un parametro bool chiamato "test"; if true tutto rimane com'è, e la cross validation rimane un po' ridondante; if false allora bisogna modificare anche process data, perché non ha senso testare prediction() su dati passati
-        # se result == 'forecast' and df_crossval = empty allora plot solo forecast (senza calcolo metriche)
-        # se invece df_crossval != empty plot del best forecast
+        @TODO: probabilmente nella definizione della classe sarebbe opportuno inserire un parametro bool chiamato "test"; if true tutto rimane com'è, e la cross validation rimane un po' ridondante; if false allora bisogna modificare anche process data, perché non ha senso testare prediction() su dati passati
+        se result == 'forecast' and df_crossval = empty allora plot solo forecast (senza calcolo metriche)
+        se invece df_crossval != empty plot del best forecast
 
         # crossvalidation (cv) is needed to decide which model is the best. 
         # but, if there is only one model, then cv is kinda useless.
@@ -516,7 +516,7 @@ class StatsForecastLab:
         sf = StatsForecast(
             models=[model],
             n_jobs=-1,
-            freq=self.freq, # @TODO: frequency should be taken as input from user (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
+            freq=self.freq,
             fallback_model=SeasonalNaive(season_length=1, alias=f"SeasNaive_sl1_{model.alias}"),
             verbose=True
         )

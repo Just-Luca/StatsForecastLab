@@ -33,7 +33,7 @@ TRANSFORMATIONS = [
 ]
 
 MODELS = [
-    # HoltWinters(), # lui non runna, fullbacka sul modello di fullback
+    # HoltWinters(), 
     # Croston(),
     # SeasonalNaive(season_length=7, alias="SeasNaive_sl7"),
     # HistoricAverage(),
