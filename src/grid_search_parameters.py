@@ -15,8 +15,8 @@ from statsforecast.models import (
 
 HORIZONS = [
     72,
-    48,
-    24,
+    # 48,
+    # 24,
 ]
 
 # @TODO: lb_days and horizons should be calculated automatically

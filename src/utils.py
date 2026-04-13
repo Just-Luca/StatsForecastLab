@@ -43,10 +43,10 @@ def create_output_folder_structure(
     results_folder = inner_folder / f"stats_training_results_(nw={n_windows})"
     results_folder.mkdir(parents=True, exist_ok=True)
 
-    fit_results_path = inner_folder / f"forecast_df.csv"
+    fit_results_path = inner_folder / f"test_forecast_df.csv"
     cv_results_path = results_folder / f"cv_df_(nw={n_windows}).csv"
     
-    fore_metric_results_path = inner_folder / f"fore_metric_bm_df.csv"
+    fore_metric_results_path = inner_folder / f"test_fore_metric_bm_df.csv"
     cross_metric_results_path = results_folder / f"cross_metric_bm_df_(nw={n_windows}).csv"
 
     return fit_results_path, cv_results_path, fore_metric_results_path, cross_metric_results_path

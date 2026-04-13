@@ -1,5 +1,6 @@
 
 from datetime import timedelta
+from unittest import result
 from matplotlib.ticker import MaxNLocator
 from statsforecast import StatsForecast
 from pathlib import Path
@@ -41,122 +42,187 @@ class StatsForecastLab:
         self.test = test
         
         
-    def predict_best(
-            self,
-            horizon: int = gsp.HORIZONS[0],
-        ):
+    # def predict_best(
+    #         self,
+    #         hrzn: int = gsp.HORIZONS[0], # adjust if horizon is also stored in cv results
+    #     ):
 
-        """
-        Given crossvalidation results (metric, unique_id, metric_value, best_model, transformation),
-        trains and predicts each unique_id using its best model+transformation combo.
-        Groups series that share the same (best_model, transformation) to train together,
-        minimizing the number of sf.fit() calls.
-        Saves the final concatenated forecast DataFrame to disk.
+    #     """
+    #     Given crossvalidation results (metric, unique_id, metric_value, best_model, transformation),
+    #     trains and predicts each unique_id using its best model+transformation combo.
+    #     Groups series that share the same (best_model, transformation) to train together,
+    #     minimizing the number of sf.fit() calls.
+    #     Saves the final concatenated forecast DataFrame to disk.
+    #     """
 
-        Args:
-            df_cv_results:  DataFrame with columns [metric, unique_id, metric_value,
-                            best_model, transformation] — one row per unique_id.
-            output_path:    Path where the final forecast CSV will be saved.
-        """
-        output_path = Path(output_path)
-        forecast_fragments: list[pd.DataFrame] = []
+    #     if self.normalization:
+    #         output_path = Path(cnsts.CSV_FOLDER_NORM / f"horizon={hrzn}" / "best_forecast.csv")
+    #     else:
+    #         output_path = Path(cnsts.CSV_FOLDER / f"horizon={hrzn}" / "best_forecast.csv")
+
+    #     if output_path.is_file():
+    #         print(f"File already exists at {output_path}, skipping computation.")
+    #         return
+
+    #     forecast_fragments: list[pd.DataFrame] = []
         
-        df_cv_results = self.best_results_metric_dataframe(
-            horizon=horizon,
-            metric="mae",
-            result="crossval"
-        )
-        # --- Group by (best_model, transformation) to batch training calls ---
-        # Series sharing the same combo can be fit in a single sf.fit() call.
-        groups = df_cv_results.groupby(["best_model", "transformation"], sort=False)
+    #     df_cv_results = self.best_results_metric_dataframe(
+    #         horizon=hrzn
+    #     )
 
-        for (best_model, transformation), group_df in groups:
+    #     # --- Group by (best_model, transformation) to batch training calls ---
+    #     # Series sharing the same combo can be fit in a single sf.fit() call.
+    #     groups = df_cv_results.groupby(["best_model", "transformation"], sort=False)
 
-            unique_ids_in_group = group_df["unique_id"].tolist()
+    #     for (best_model, transformation), group_df in groups:
 
-            # Resolve the model object matching best_model name
-            model_obj = next(
-                (m for m in self.models if type(m).__name__ == best_model), None
-            )
-            if model_obj is None:
-                raise ValueError(
-                    f"Model '{best_model}' found in CV results but not in self.models. "
-                    f"Available: {[type(m).__name__ for m in self.models]}"
-                )
+    #         unique_ids_in_group = group_df["unique_id"].tolist()
 
-            # _train_loop loads ALL series — we use the first horizon (or adapt as needed)
-            # and the matched transformation + model to get df_train, sf, and the horizon
-            horizon = self.horizons[0]  # adjust if horizon is also stored in cv results
+    #         # # Resolve the model object matching best_model name
+    #         # model_obj = next(
+    #         #     (m for m in self.models if m.alias == best_model), None
+    #         # )
 
-            df_train, _, _, sf, _ = self._train_loop(
-                horizon=horizon,
-                transformation=transformation,
-                model=model_obj,
-            )
+    #         # if model_obj is None:
+    #         #     raise ValueError(
+    #         #         f"Model '{best_model}' found in CV results but not in self.models. "
+    #         #         f"Available: {[m.alias for m in self.models]}"
+    #         #     )
 
-            # Filter df_train to only the series in this group before fitting.
-            # StatsForecast respects unique_id — fitting on a subset is valid.
-            df_train_group = df_train[df_train["unique_id"].isin(unique_ids_in_group)]
+    #         # _train_loop loads ALL series — we use the first horizon (or adapt as needed)
+    #         # and the matched transformation + model to get df_train, sf, and the horizon
 
-            sf.fit(df=df_train_group)
-            df_fore = sf.predict(h=horizon)
+    #         df_train, _, _, sf, _ = self._train_loop(
+    #             horizon=hrzn,
+    #             transformation=transformation,
+    #             model=best_model,
+    #         )
 
-            # Apply inverse transformation and keep only this group's unique_ids
-            df_fore_inv = (
-                utils.apply_inverse_transformation_to_dataframe(df_fore, transformation)
-                .assign(ds=lambda x: pd.to_datetime(x["ds"]))
-                .loc[lambda x: x["unique_id"].isin(unique_ids_in_group)]
-            )
+    #         # Filter df_train to only the series in this group before fitting.
+    #         # StatsForecast respects unique_id — fitting on a subset is valid.
+    #         df_train_group = df_train[df_train["unique_id"].isin(unique_ids_in_group)]
 
-            forecast_fragments.append(df_fore_inv)
+    #         sf.fit(df=df_train_group)
+    #         df_fore = sf.predict(h=hrzn)
 
-        # --- Combine all fragments and save ---
-        df_final = pd.concat(forecast_fragments, ignore_index=True)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        df_final.to_csv(output_path, index=False, encoding="utf-8")
+    #         # Apply inverse transformation and keep only this group's unique_ids
+    #         df_fore_inv = (
+    #             utils.apply_inverse_transformation_to_dataframe(df_fore, transformation)
+    #             .assign(ds=lambda x: pd.to_datetime(x["ds"]))
+    #             # .loc[lambda x: x["unique_id"].isin(unique_ids_in_group)]
+    #         )
+    #         df_fore_best = (
+    #             df_fore_inv[["unique_id", "ds", best_model]]
+    #             .rename(columns={best_model: "prediction"})
+    #         )
+
+    #         forecast_fragments.append(df_fore_best)
+
+    #     # --- Combine all fragments and save ---
+    #     df_final = pd.concat(forecast_fragments, ignore_index=True)
+    #     output_path.parent.mkdir(parents=True, exist_ok=True)
+    #     df_final.to_csv(output_path, index=False, encoding="utf-8")
 
 
     def predict(self):
+                
+        if self.test:
 
-        for horizon, transformation, model in itertools.product(
-                self.horizons, self.transformations, self.models
-            ):
-            
-            df_train, fit_results_path, _, sf, model_name = self._train_loop(
-                horizon,
-                transformation,
-                model
-            )
-
-            if fit_results_path.is_file():
-                df_old_fore = pd.read_csv(fit_results_path).assign(
-                    ds=lambda x: pd.to_datetime(x["ds"])
+            for horizon, transformation, model in itertools.product(
+                    self.horizons, self.transformations, self.models
+                ):
+                
+                df_train, fit_results_path, _, sf, model_name = self._train_loop(
+                    horizon,
+                    transformation,
+                    model
                 )
-            else:
-                df_old_fore = pd.DataFrame()
-            
-            if model_name not in df_old_fore.columns:
 
-                sf.fit(df=df_train)
-
-                df_fore = sf.predict(h=horizon)
-
-                df_fore_new = utils.apply_inverse_transformation_to_dataframe(
-                    df_fore, transformation
-                ).assign(ds=lambda x: pd.to_datetime(x["ds"]))
-
-                if not df_old_fore.empty:
-                    _dffore = pd.merge(
-                        df_old_fore, df_fore_new, on=["ds", "unique_id"], how="inner"
+                if fit_results_path.is_file():
+                    df_old_fore = pd.read_csv(fit_results_path).assign(
+                        ds=lambda x: pd.to_datetime(x["ds"])
                     )
                 else:
-                    _dffore = df_fore_new
+                    df_old_fore = pd.DataFrame()
+                
+                if model_name not in df_old_fore.columns:
 
-                _dffore.to_csv(fit_results_path, index=False, encoding="utf-8")
-            else:
-                pass
+                    sf.fit(df=df_train)
 
+                    df_fore = sf.predict(h=horizon)
 
+                    df_fore_new = utils.apply_inverse_transformation_to_dataframe(
+                        df_fore, transformation
+                    ).assign(ds=lambda x: pd.to_datetime(x["ds"]))
+
+                    if not df_old_fore.empty:
+                        _dffore = pd.merge(
+                            df_old_fore, df_fore_new, on=["ds", "unique_id"], how="inner"
+                        )
+                    else:
+                        _dffore = df_fore_new
+
+                    _dffore.to_csv(fit_results_path, index=False, encoding="utf-8")
+                else:
+                    pass
+
+        else:
+            """
+            Given crossvalidation results (metric, unique_id, metric_value, best_model, transformation),
+            trains and predicts each unique_id using its best model+transformation combo.
+            Groups series that share the same (best_model, transformation) to train together,
+            minimizing the number of sf.fit() calls.
+            Saves the final concatenated forecast DataFrame to disk.
+            """
+
+            for horizon in self.horizons:
+
+                output_path = self._get_best_forecast_path(horizon)
+
+                if output_path.is_file():
+                    print(f"File already exists at {output_path}, skipping computation.")
+                    return 
+
+                forecast_fragments: list[pd.DataFrame] = []
+                
+                df_cv_results = self.best_results_metric_dataframe(
+                    horizon=horizon
+                )
+
+                # Series sharing the same combo can be fit in a single sf.fit() call.
+                groups = df_cv_results.groupby(["best_model", "transformation"], sort=False)
+
+                for (best_model, transformation), group_df in groups:
+
+                    unique_ids_in_group = group_df["unique_id"].tolist()
+
+                    df_train, _, _, sf, _ = self._train_loop(
+                        horizon=horizon,
+                        transformation=transformation,
+                        model=best_model,
+                    )
+
+                    df_train_group = df_train[df_train["unique_id"].isin(unique_ids_in_group)]
+
+                    sf.fit(df=df_train_group)
+                    df_fore = sf.predict(h=horizon)
+
+                    df_fore_inv = (
+                        utils.apply_inverse_transformation_to_dataframe(df_fore, transformation)
+                        .assign(ds=lambda x: pd.to_datetime(x["ds"]))
+                    )
+                    df_fore_best = (
+                        df_fore_inv[["unique_id", "ds", best_model]]
+                        .rename(columns={best_model: "prediction"})
+                    )
+
+                    forecast_fragments.append(df_fore_best)
+
+                df_final = pd.concat(forecast_fragments, ignore_index=True)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                df_final.to_csv(output_path, index=False, encoding="utf-8")
+
+            
     def cross_validation(self):
 
         for horizon, transformation, model in itertools.product(
@@ -229,7 +295,7 @@ class StatsForecastLab:
             pass
 
         if result == 'forecast' or result == 'crossval':
-
+            # @TODO: best_results_prediction_dataframe() is ok just if test=True, otherwise df_plot=best_forecast.csv
             df_plot = self.best_results_prediction_dataframe(
                 horizon=horizon,
                 result=result,
@@ -239,10 +305,6 @@ class StatsForecastLab:
 
         else:
             pass
-        
-        # @TODO: probabilmente nella definizione della classe sarebbe opportuno inserire un parametro bool chiamato "test"; if true tutto rimane com'è, e la cross validation rimane un po' ridondante; if false allora bisogna modificare anche process data, perché non ha senso testare prediction() su dati passati
-        # se result == 'forecast' and df_crossval = empty allora plot solo forecast (senza calcolo metriche)
-        # se invece df_crossval != empty plot del best forecast
 
         # crossvalidation (cv) is needed to decide which model is the best. 
         # but, if there is only one model, then cv is kinda useless.
@@ -254,6 +316,44 @@ class StatsForecastLab:
             unique_ids=unique_ids
         )
 
+è giusto?
+        match result:
+            case 'forecast':
+                if self.test:
+                    return self._plot_forecast(
+                        df_forecast=df_plot, 
+                        df_crossval=df_crossval,
+                        eval_horizon=eval_horizon, 
+                        actual=actual
+                    )
+                else:
+                    return self._plot_forecast(
+                        df_forecast=pd.read(self._get_best_forecast_path(horizon)), 
+                        df_crossval=df_crossval,
+                        eval_horizon=eval_horizon, 
+                        actual=actual
+                    )        
+            
+            case 'crossval':
+                return self._plot_cross_validation(
+                    df_crossval=self.best_results_prediction_dataframe(
+                        horizon=horizon,
+                        result=result,
+                        metric=metric,
+                        unique_ids=unique_ids
+                    ), 
+                    eval_horizon=eval_horizon, 
+                    actual=actual
+                )
+
+            case 'metrics':
+                return self._metrics_plot(
+                    unique_ids=unique_ids,
+                    horizon=horizon,
+                )
+            case _:
+                raise ValueError(f"Invalid result specified, got {result}.")
+            
         match result:
             case 'forecast':
                 return self._plot_forecast(
@@ -566,6 +666,15 @@ class StatsForecastLab:
         return filtered_df[filtered_df['unique_id'].isin(ids)].reset_index(drop=True)
 
 
+    def _get_best_forecast_path(self, horizon):
+                    
+        if self.normalization:
+            output_path = Path(cnsts.CSV_FOLDER_NORM / f"horizon={horizon}" / "best_forecast.csv")
+        else:
+            output_path = Path(cnsts.CSV_FOLDER / f"horizon={horizon}" / "best_forecast.csv")
+        return output_path
+
+    # @TODO: maybe I want to insert an unique_id filter here, so that one can decide which series train
     def _train_loop(
             self,
             horizon,
