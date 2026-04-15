@@ -40,6 +40,9 @@ class StatsForecastLab:
         self.models = models
         self.normalization = normalization
         self.test = test
+
+        if self.test:
+            print("Test mode activated", UserWarning)
         
         
     # def predict_best(
@@ -294,17 +297,17 @@ class StatsForecastLab:
         else:
             pass
 
-        if result == 'forecast' or result == 'crossval':
-            # @TODO: best_results_prediction_dataframe() is ok just if test=True, otherwise df_plot=best_forecast.csv
-            df_plot = self.best_results_prediction_dataframe(
-                horizon=horizon,
-                result=result,
-                metric=metric,
-                unique_ids=unique_ids
-            )
+        # if result == 'forecast' or result == 'crossval':
+        #     # @TODO: best_results_prediction_dataframe() is ok just if test=True, otherwise df_plot=best_forecast.csv
+        #     df_plot = self.best_results_prediction_dataframe(
+        #         horizon=horizon,
+        #         result=result,
+        #         metric=metric,
+        #         unique_ids=unique_ids
+        #     )
 
-        else:
-            pass
+        # else:
+        #     pass
 
         # crossvalidation (cv) is needed to decide which model is the best. 
         # but, if there is only one model, then cv is kinda useless.
@@ -316,12 +319,17 @@ class StatsForecastLab:
             unique_ids=unique_ids
         )
 
-è giusto?
+funziona?
         match result:
             case 'forecast':
                 if self.test:
                     return self._plot_forecast(
-                        df_forecast=df_plot, 
+                        df_forecast=self.best_results_prediction_dataframe(
+                            horizon=horizon,
+                            result=result,
+                            metric=metric,
+                            unique_ids=unique_ids
+                        ), 
                         df_crossval=df_crossval,
                         eval_horizon=eval_horizon, 
                         actual=actual
@@ -341,7 +349,7 @@ class StatsForecastLab:
                         result=result,
                         metric=metric,
                         unique_ids=unique_ids
-                    ), 
+                    ),    
                     eval_horizon=eval_horizon, 
                     actual=actual
                 )
@@ -354,29 +362,29 @@ class StatsForecastLab:
             case _:
                 raise ValueError(f"Invalid result specified, got {result}.")
             
-        match result:
-            case 'forecast':
-                return self._plot_forecast(
-                    df_forecast=df_plot, 
-                    df_crossval=df_crossval,
-                    eval_horizon=eval_horizon, 
-                    actual=actual
-                )        
+        # match result:
+        #     case 'forecast':
+        #         return self._plot_forecast(
+        #             df_forecast=df_plot, 
+        #             df_crossval=df_crossval,
+        #             eval_horizon=eval_horizon, 
+        #             actual=actual
+        #         )        
             
-            case 'crossval':
-                return self._plot_cross_validation(
-                    df_crossval=df_plot, 
-                    eval_horizon=eval_horizon, 
-                    actual=actual
-                )
+        #     case 'crossval':
+        #         return self._plot_cross_validation(
+        #             df_crossval=df_plot, 
+        #             eval_horizon=eval_horizon, 
+        #             actual=actual
+        #         )
 
-            case 'metrics':
-                return self._metrics_plot(
-                    unique_ids=unique_ids,
-                    horizon=horizon,
-                )
-            case _:
-                raise ValueError(f"Invalid result specified, got {result}.")
+        #     case 'metrics':
+        #         return self._metrics_plot(
+        #             unique_ids=unique_ids,
+        #             horizon=horizon,
+        #         )
+        #     case _:
+        #         raise ValueError(f"Invalid result specified, got {result}.")
             
 
     def best_model_metric_evaluation(
