@@ -73,6 +73,7 @@ StatsForecastLab/
 │   └── utils.py                    # Evaluation utilities, metric aggregation, plotting helpers
 ├── test_statsforecastlab.ipynb     # End-to-end experiment walkthrough notebook
 ├── my_lab.py                       # Concise pipeline with core workflow
+├── requirements.txt  
 └── README.md
 ```
 
