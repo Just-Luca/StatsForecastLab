@@ -1,6 +1,5 @@
 
 from datetime import timedelta
-from unittest import result
 from matplotlib.ticker import MaxNLocator
 from statsforecast import StatsForecast
 from pathlib import Path
@@ -44,188 +43,16 @@ class StatsForecastLab:
         if self.test:
             print("Test mode activated", UserWarning)
         
-        
-    # def predict_best(
-    #         self,
-    #         hrzn: int = gsp.HORIZONS[0], # adjust if horizon is also stored in cv results
-    #     ):
 
-    #     """
-    #     Given crossvalidation results (metric, unique_id, metric_value, best_model, transformation),
-    #     trains and predicts each unique_id using its best model+transformation combo.
-    #     Groups series that share the same (best_model, transformation) to train together,
-    #     minimizing the number of sf.fit() calls.
-    #     Saves the final concatenated forecast DataFrame to disk.
-    #     """
-
-    #     if self.normalization:
-    #         output_path = Path(cnsts.CSV_FOLDER_NORM / f"horizon={hrzn}" / "best_forecast.csv")
-    #     else:
-    #         output_path = Path(cnsts.CSV_FOLDER / f"horizon={hrzn}" / "best_forecast.csv")
-
-    #     if output_path.is_file():
-    #         print(f"File already exists at {output_path}, skipping computation.")
-    #         return
-
-    #     forecast_fragments: list[pd.DataFrame] = []
-        
-    #     df_cv_results = self.best_results_metric_dataframe(
-    #         horizon=hrzn
-    #     )
-
-    #     # --- Group by (best_model, transformation) to batch training calls ---
-    #     # Series sharing the same combo can be fit in a single sf.fit() call.
-    #     groups = df_cv_results.groupby(["best_model", "transformation"], sort=False)
-
-    #     for (best_model, transformation), group_df in groups:
-
-    #         unique_ids_in_group = group_df["unique_id"].tolist()
-
-    #         # # Resolve the model object matching best_model name
-    #         # model_obj = next(
-    #         #     (m for m in self.models if m.alias == best_model), None
-    #         # )
-
-    #         # if model_obj is None:
-    #         #     raise ValueError(
-    #         #         f"Model '{best_model}' found in CV results but not in self.models. "
-    #         #         f"Available: {[m.alias for m in self.models]}"
-    #         #     )
-
-    #         # _train_loop loads ALL series — we use the first horizon (or adapt as needed)
-    #         # and the matched transformation + model to get df_train, sf, and the horizon
-
-    #         df_train, _, _, sf, _ = self._train_loop(
-    #             horizon=hrzn,
-    #             transformation=transformation,
-    #             model=best_model,
-    #         )
-
-    #         # Filter df_train to only the series in this group before fitting.
-    #         # StatsForecast respects unique_id — fitting on a subset is valid.
-    #         df_train_group = df_train[df_train["unique_id"].isin(unique_ids_in_group)]
-
-    #         sf.fit(df=df_train_group)
-    #         df_fore = sf.predict(h=hrzn)
-
-    #         # Apply inverse transformation and keep only this group's unique_ids
-    #         df_fore_inv = (
-    #             utils.apply_inverse_transformation_to_dataframe(df_fore, transformation)
-    #             .assign(ds=lambda x: pd.to_datetime(x["ds"]))
-    #             # .loc[lambda x: x["unique_id"].isin(unique_ids_in_group)]
-    #         )
-    #         df_fore_best = (
-    #             df_fore_inv[["unique_id", "ds", best_model]]
-    #             .rename(columns={best_model: "prediction"})
-    #         )
-
-    #         forecast_fragments.append(df_fore_best)
-
-    #     # --- Combine all fragments and save ---
-    #     df_final = pd.concat(forecast_fragments, ignore_index=True)
-    #     output_path.parent.mkdir(parents=True, exist_ok=True)
-    #     df_final.to_csv(output_path, index=False, encoding="utf-8")
-
-
-    def predict(self):
-                
-        if self.test:
-
-            for horizon, transformation, model in itertools.product(
-                    self.horizons, self.transformations, self.models
-                ):
-                
-                df_train, fit_results_path, _, sf, model_name = self._train_loop(
-                    horizon,
-                    transformation,
-                    model
-                )
-
-                if fit_results_path.is_file():
-                    df_old_fore = pd.read_csv(fit_results_path).assign(
-                        ds=lambda x: pd.to_datetime(x["ds"])
-                    )
-                else:
-                    df_old_fore = pd.DataFrame()
-                
-                if model_name not in df_old_fore.columns:
-
-                    sf.fit(df=df_train)
-
-                    df_fore = sf.predict(h=horizon)
-
-                    df_fore_new = utils.apply_inverse_transformation_to_dataframe(
-                        df_fore, transformation
-                    ).assign(ds=lambda x: pd.to_datetime(x["ds"]))
-
-                    if not df_old_fore.empty:
-                        _dffore = pd.merge(
-                            df_old_fore, df_fore_new, on=["ds", "unique_id"], how="inner"
-                        )
-                    else:
-                        _dffore = df_fore_new
-
-                    _dffore.to_csv(fit_results_path, index=False, encoding="utf-8")
-                else:
-                    pass
-
+    def create_folder_structure(self):
+        if self.normalization:
+            cnsts.CSV_FOLDER_NORM.mkdir(parents=True, exist_ok=True)
+            return cnsts.CSV_FOLDER_NORM
         else:
-            """
-            Given crossvalidation results (metric, unique_id, metric_value, best_model, transformation),
-            trains and predicts each unique_id using its best model+transformation combo.
-            Groups series that share the same (best_model, transformation) to train together,
-            minimizing the number of sf.fit() calls.
-            Saves the final concatenated forecast DataFrame to disk.
-            """
+            cnsts.CSV_FOLDER.mkdir(parents=True, exist_ok=True)
+            return cnsts.CSV_FOLDER
 
-            for horizon in self.horizons:
 
-                output_path = self._get_best_forecast_path(horizon)
-
-                if output_path.is_file():
-                    print(f"File already exists at {output_path}, skipping computation.")
-                    return 
-
-                forecast_fragments: list[pd.DataFrame] = []
-                
-                df_cv_results = self.best_results_metric_dataframe(
-                    horizon=horizon
-                )
-
-                # Series sharing the same combo can be fit in a single sf.fit() call.
-                groups = df_cv_results.groupby(["best_model", "transformation"], sort=False)
-
-                for (best_model, transformation), group_df in groups:
-
-                    unique_ids_in_group = group_df["unique_id"].tolist()
-
-                    df_train, _, _, sf, _ = self._train_loop(
-                        horizon=horizon,
-                        transformation=transformation,
-                        model=best_model,
-                    )
-
-                    df_train_group = df_train[df_train["unique_id"].isin(unique_ids_in_group)]
-
-                    sf.fit(df=df_train_group)
-                    df_fore = sf.predict(h=horizon)
-
-                    df_fore_inv = (
-                        utils.apply_inverse_transformation_to_dataframe(df_fore, transformation)
-                        .assign(ds=lambda x: pd.to_datetime(x["ds"]))
-                    )
-                    df_fore_best = (
-                        df_fore_inv[["unique_id", "ds", best_model]]
-                        .rename(columns={best_model: "prediction"})
-                    )
-
-                    forecast_fragments.append(df_fore_best)
-
-                df_final = pd.concat(forecast_fragments, ignore_index=True)
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-                df_final.to_csv(output_path, index=False, encoding="utf-8")
-
-            
     def cross_validation(self):
 
         for horizon, transformation, model in itertools.product(
@@ -281,6 +108,104 @@ class StatsForecastLab:
             else:
                 pass
 
+            
+    def predict(self):
+                
+        if self.test:
+
+            for horizon, transformation, model in itertools.product(
+                    self.horizons, self.transformations, self.models
+                ):
+                
+                df_train, fit_results_path, _, sf, model_name = self._train_loop(
+                    horizon,
+                    transformation,
+                    model
+                )
+
+                if fit_results_path.is_file():
+                    df_old_fore = pd.read_csv(fit_results_path).assign(
+                        ds=lambda x: pd.to_datetime(x["ds"])
+                    )
+                else:
+                    df_old_fore = pd.DataFrame()
+                
+                if model_name not in df_old_fore.columns:
+
+                    sf.fit(df=df_train)
+
+                    df_fore = sf.predict(h=horizon)
+
+                    df_fore_new = utils.apply_inverse_transformation_to_dataframe(
+                        df_fore, transformation
+                    ).assign(ds=lambda x: pd.to_datetime(x["ds"]))
+
+                    if not df_old_fore.empty:
+                        _dffore = pd.merge(
+                            df_old_fore, df_fore_new, on=["ds", "unique_id"], how="inner"
+                        )
+                    else:
+                        _dffore = df_fore_new
+
+                    _dffore.to_csv(fit_results_path, index=False, encoding="utf-8")
+                else:
+                    pass
+
+        else:
+            """
+            Given crossvalidation results (metric, unique_id, metric_value, best_model, transformation),
+            trains and predicts each unique_id using its best model+transformation combo.
+            Groups series that share the same (best_model, transformation) to train together,
+            minimizing the number of sf.fit() calls.
+            Saves the final concatenated forecast DataFrame to disk.
+            """
+            for horizon in self.horizons:
+
+                output_path = self._get_best_forecast_path(horizon)
+
+                if output_path.is_file():
+                    print(f"File already exists at {output_path}, skipping computation.")
+                    return 
+
+                forecast_fragments: list[pd.DataFrame] = []
+                
+                df_cv_results = self.best_results_metric_dataframe(
+                    horizon=horizon
+                )
+
+                # Series sharing the same combo can be fit in a single sf.fit() call.
+                groups = df_cv_results.groupby(["best_model", "transformation"], sort=False)
+
+                for (best_model, transformation), group_df in groups:
+
+                    unique_ids_in_group = group_df["unique_id"].tolist()
+
+                    df_train, _, _, sf, _ = self._train_loop(
+                        horizon=horizon,
+                        transformation=transformation,
+                        model=best_model,
+                    )
+
+                    df_train_group = df_train[df_train["unique_id"].isin(unique_ids_in_group)]
+
+                    sf.fit(df=df_train_group)
+                    df_fore = sf.predict(h=horizon)
+
+                    df_fore_inv = (
+                        utils.apply_inverse_transformation_to_dataframe(df_fore, transformation)
+                        .assign(ds=lambda x: pd.to_datetime(x["ds"]))
+                    )
+                    df_fore_best = (
+                        df_fore_inv[["unique_id", "ds", best_model]]
+                        .rename(columns={best_model: "forecast"})
+                    )
+
+                    forecast_fragments.append(df_fore_best)
+
+                df_final = pd.concat(forecast_fragments, ignore_index=True)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                df_final.to_csv(output_path, index=False, encoding="utf-8")
+
     
     def best_results_plots(
             self,
@@ -297,21 +222,10 @@ class StatsForecastLab:
         else:
             pass
 
-        # if result == 'forecast' or result == 'crossval':
-        #     # @TODO: best_results_prediction_dataframe() is ok just if test=True, otherwise df_plot=best_forecast.csv
-        #     df_plot = self.best_results_prediction_dataframe(
-        #         horizon=horizon,
-        #         result=result,
-        #         metric=metric,
-        #         unique_ids=unique_ids
-        #     )
-
-        # else:
-        #     pass
-
         # crossvalidation (cv) is needed to decide which model is the best. 
         # but, if there is only one model, then cv is kinda useless.
         # NB: this function does not work if cv is not performed. @TODO We need to adjust this!
+
         df_crossval = self.best_results_prediction_dataframe(
             horizon=horizon,
             result='crossval',
@@ -319,7 +233,6 @@ class StatsForecastLab:
             unique_ids=unique_ids
         )
 
-funziona?
         match result:
             case 'forecast':
                 if self.test:
@@ -336,7 +249,7 @@ funziona?
                     )
                 else:
                     return self._plot_forecast(
-                        df_forecast=pd.read(self._get_best_forecast_path(horizon)), 
+                        df_forecast=pd.read_csv(self._get_best_forecast_path(horizon)), 
                         df_crossval=df_crossval,
                         eval_horizon=eval_horizon, 
                         actual=actual
@@ -362,30 +275,6 @@ funziona?
             case _:
                 raise ValueError(f"Invalid result specified, got {result}.")
             
-        # match result:
-        #     case 'forecast':
-        #         return self._plot_forecast(
-        #             df_forecast=df_plot, 
-        #             df_crossval=df_crossval,
-        #             eval_horizon=eval_horizon, 
-        #             actual=actual
-        #         )        
-            
-        #     case 'crossval':
-        #         return self._plot_cross_validation(
-        #             df_crossval=df_plot, 
-        #             eval_horizon=eval_horizon, 
-        #             actual=actual
-        #         )
-
-        #     case 'metrics':
-        #         return self._metrics_plot(
-        #             unique_ids=unique_ids,
-        #             horizon=horizon,
-        #         )
-        #     case _:
-        #         raise ValueError(f"Invalid result specified, got {result}.")
-            
 
     def best_model_metric_evaluation(
             self,
@@ -408,7 +297,7 @@ funziona?
             )
             
             fit_results_path, cv_results_path, fore_metric_results_path, cross_metric_results_path = (
-                utils.create_output_folder_structure(horizon, transformation, n_windows)
+                self._create_output_folder_structure(horizon, transformation, n_windows)
             )
 
             if result == "forecast":
@@ -484,7 +373,7 @@ funziona?
             )
             
             _, _, fore_metric_results_path, cross_metric_results_path = (
-                utils.create_output_folder_structure(horizon, transformation, n_windows)
+                self._create_output_folder_structure(horizon, transformation, n_windows)
             )
 
             if result == "forecast":
@@ -535,7 +424,7 @@ funziona?
             )
             
             _, _, fore_metric_results_path, cross_metric_results_path = (
-                utils.create_output_folder_structure(horizon, transformation, n_windows)
+                self._create_output_folder_structure(horizon, transformation, n_windows)
             )
 
             if result == "forecast":
@@ -564,7 +453,9 @@ funziona?
         return results_df.loc[min_mape_idx].sort_values('horizon', ascending=False).reset_index(drop=True)
 
 
-    # it returns the best results of the training, whether they are crossvalidation or forecast results. one can choose which product and client display and which metric use in order to establish the "best" results
+    """
+    It returns the best results of the training, whether they are crossvalidation or (test) forecast results. One can choose which product and client display and which metric use in order to establish the "best" results
+    """
     def best_results_prediction_dataframe(
             self,
             horizon: int = gsp.HORIZONS[0],
@@ -606,7 +497,7 @@ funziona?
                 )
 
                 file_path, _, _, _ = (
-                    utils.create_output_folder_structure(horizon, transformation, n_windows)
+                    self._create_output_folder_structure(horizon, transformation, n_windows)
                 )
 
                 forecast_df = pd.read_csv(file_path)   
@@ -647,7 +538,7 @@ funziona?
                 )
                 
                 _, file_path, _, _ = (
-                    utils.create_output_folder_structure(horizon, transformation, n_windows)
+                    self._create_output_folder_structure(horizon, transformation, n_windows)
                 )
 
                 crossval_df = pd.read_csv(file_path)   
@@ -672,6 +563,36 @@ funziona?
             filtered_df = filtered_df.iloc[:, [4, 0, 1, 2, 3]]
 
         return filtered_df[filtered_df['unique_id'].isin(ids)].reset_index(drop=True)
+    
+
+    def _create_output_folder_structure(
+            self,
+            horizon: int, 
+            transformation: str, 
+            n_windows: int
+        ) -> Tuple[Path, Path, Path, Path]:
+
+        name_csv_folder = self.create_folder_structure()
+
+        horizon_folder = name_csv_folder / f"horizon={horizon}"
+        horizon_folder.mkdir(parents=True, exist_ok=True)
+
+        base_folder = horizon_folder / f"SF_container_{transformation}"
+        base_folder.mkdir(parents=True, exist_ok=True)
+
+        inner_folder = base_folder / f"stats_training"
+        inner_folder.mkdir(parents=True, exist_ok=True)
+
+        results_folder = inner_folder / f"stats_training_results_(nw={n_windows})"
+        results_folder.mkdir(parents=True, exist_ok=True)
+
+        fit_results_path = inner_folder / f"test_forecast_df.csv"
+        cv_results_path = results_folder / f"cv_df_(nw={n_windows}).csv"
+        
+        fore_metric_results_path = inner_folder / f"test_fore_metric_bm_df.csv"
+        cross_metric_results_path = results_folder / f"cross_metric_bm_df_(nw={n_windows}).csv"
+
+        return fit_results_path, cv_results_path, fore_metric_results_path, cross_metric_results_path
 
 
     def _get_best_forecast_path(self, horizon):
@@ -702,7 +623,7 @@ funziona?
             horizon=horizon
         )
 
-        fit_results_path, cv_results_path, _, _ = utils.create_output_folder_structure(
+        fit_results_path, cv_results_path, _, _ = self._create_output_folder_structure(
             horizon, transformation, n_windows
         )
 
@@ -815,7 +736,7 @@ funziona?
         n_rows = math.ceil(n_plots / n_cols)  
 
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(15 * n_cols, 7 * n_rows), squeeze=False)
-        fig.suptitle(f"Forecast {cnsts.DATA_NAME} Plot", fontsize=55) # @TODO: the title should be "Forecast {data title} Plot"
+        fig.suptitle(f"Forecast {cnsts.DATA_NAME} Plot", fontsize=55) 
 
         # Flatten the axes array for easier iteration
         axes = axes.flatten() 

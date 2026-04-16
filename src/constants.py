@@ -2,11 +2,11 @@
 from pathlib import Path
 
 parent_folder = Path.cwd().parent  
+
 CSV_FOLDER = Path.cwd().parent / "StatsForecast" / "results"  
 CSV_FOLDER_NORM = Path.cwd().parent / "StatsForecast" / "results_norm"  
-# SRC = Path.cwd().parent / "StatsForecast" / "data"
+
 DATA_PATH = Path.cwd().parent / "StatsForecast" / "data" / "ETTh.csv"
-# DATA_PATH = Path.cwd().parent / "StatsForecast" / "data" / "volatility_Europe_garch_1_1.csv"
 
 DATA_NAME = "ETTh"  # @TODO: this should be automatically extracted from the DATA_PATH
 
@@ -30,9 +30,9 @@ FREQUENCIES = [
 ]
 
 EVAL_HORIZONS = [
-    24, 
+    # 24, 
     # 7, 
-    # 1
+    1
 ]
 
 # @TODO: capire esattamente la dimensione della parte di test, e se è possibile calcolarla automaticamente a partire dalla frequenza del dataset

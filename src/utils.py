@@ -6,50 +6,7 @@ from src import grid_search_parameters as gsp
 from typing import Tuple
 
 import numpy as np
-import os
 import pandas as pd
-
-os.environ.setdefault("NIXTLA_ID_AS_COL", "1")
-
-# @TODO: i can move this function into the class directly, and then add a my_lab.py file containing all the pipeline (def main()...)
-
-# def create_folder_structure(self):
-#     if self.normalization:
-#         cnsts.CSV_FOLDER_NORM.mkdir(parents=True, exist_ok=True)
-#       return cnsts.CSV_FOLDER_NORM
-#     else:
-#         cnsts.CSV_FOLDER.mkdir(parents=True, exist_ok=True)
-#       return cnsts.CSV_FOLDER
-
-def create_folder_structure():
-    cnsts.CSV_FOLDER_NORM.mkdir(parents=True, exist_ok=True)
-
-
-def create_output_folder_structure(
-        horizon: int, 
-        transformation: str, 
-        n_windows: int
-    ) -> Tuple[Path, Path, Path, Path]:
-
-    horizon_folder = cnsts.CSV_FOLDER_NORM / f"horizon={horizon}"
-    horizon_folder.mkdir(parents=True, exist_ok=True)
-
-    base_folder = horizon_folder / f"SF_container_{transformation}"
-    base_folder.mkdir(parents=True, exist_ok=True)
-
-    inner_folder = base_folder / f"stats_training"
-    inner_folder.mkdir(parents=True, exist_ok=True)
-
-    results_folder = inner_folder / f"stats_training_results_(nw={n_windows})"
-    results_folder.mkdir(parents=True, exist_ok=True)
-
-    fit_results_path = inner_folder / f"test_forecast_df.csv"
-    cv_results_path = results_folder / f"cv_df_(nw={n_windows}).csv"
-    
-    fore_metric_results_path = inner_folder / f"test_fore_metric_bm_df.csv"
-    cross_metric_results_path = results_folder / f"cross_metric_bm_df_(nw={n_windows}).csv"
-
-    return fit_results_path, cv_results_path, fore_metric_results_path, cross_metric_results_path
 
 
 def normalize_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -360,11 +317,4 @@ def calculate_mean_metrics(df_path: Path, metric: str = "mae"):
             raise ValueError(f"Invalid metric specified: {metric}. Choose from {cnsts.valid_metrics}.") 
     
 
-def main():
-    os.environ.setdefault("NIXTLA_ID_AS_COL", "1")
 
-    create_folder_structure()
-
-
-if __name__ == "__main__":
-    main()
