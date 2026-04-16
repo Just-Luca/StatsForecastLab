@@ -388,7 +388,7 @@ If you use StatsForecastLab in your research or production work, please cite bot
 ```bibtex
 @software{statsforecastlab,
   title   = {StatsForecastLab: Statistical Forecast Laboratory},
-  year    = {2024},
+  year    = {2026},
   url     = {https://github.com/Just-Luca/StatsForecastLab}
 }
 ```
