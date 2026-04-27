@@ -54,7 +54,7 @@ Cross-Val   Predict
     │         │
     └────┬────┘
          │
-   Evaluation & Plotting (utils.py)
+   Evaluation & Plotting
          │
          ▼
   Best Model Selection → Production Forecast
@@ -85,7 +85,7 @@ StatsForecastLab/
 
 **`statsforecastlab.py`** — Houses the primary `StatsForecastLab` class. Exposes the core API: `predict`, `cross_validate`, `plot`, and `summary`.
 
-**`utils.py`** — Helper functions for metric computation, result aggregation, and visualization. Designed to be imported independently when needed.
+**`utils.py`** — Helper functions for metric computation and result aggregation. Designed to be imported independently when needed.
 
 ---
 
@@ -115,34 +115,29 @@ pip install statsforecast pandas numpy matplotlib
 ---
 
 ## Quick Start Example
+For this example we used "[ETTh.csv](https://www.kaggle.com/datasets/limpidcloud/datasets-for-multivariate-time-series-forecasting?select=ETTh.csv)" dataset.
+
+Note: a long-format time-series dataset is required (expected columns: unique_id, ds, y)
 
 ```python
-import pandas as pd
-from src.statsforecastlab import StatsForecastLab
+def main():
 
-# Load a long-format time series dataset
-df = pd.read_csv("data/my_series.csv")
-# Expected columns: unique_id, ds, y
+    os.environ.setdefault("NIXTLA_ID_AS_COL", "1")
 
-# Initialize the lab
-lab = StatsForecastLab(
-    df=df,
-    freq="M",          # Monthly frequency
-    horizon=12,        # Forecast 12 periods ahead
-    metric="mae"       # Optimization target
-)
+    sflab = StatsForecastLab(
+         freq="h",             # Hourly frequency
+         normalization=True,   # Data get normalized
+    )
 
-# Run cross-validation grid search
-lab.cross_validation()
+    sflab.create_folder_structure()
+    sflab.cross_validation()
+    sflab.predict()
 
-# Inspect model comparison summary
-lab.summary()
+    print(sflab.best_results_summary())
+    
+if __name__ == "__main__":
+    main()
 
-# Generate forecast with the best-selected model
-forecast = lab.predict()
-
-# Visualize results
-lab.best_results_plots()
 ```
 
 ---
@@ -212,32 +207,48 @@ StatsForecastLab(
 The following demonstrates a complete benchmarking experiment comparing classical models across a monthly retail demand series.
 
 ```python
-from src.hup_statsmacrocast import StatsForecastLab
-from src.grid_search_parameters import MODEL_GRID
-import pandas as pd
+from src.statsforecastlab import StatsForecastLab
 
-# Load data
-df = pd.read_csv("data/retail_demand.csv")
-
-# Initialize with a custom model grid
-lab = StatsForecastLab(
-    df=df,
-    freq="M",
-    horizon=6,
-    metric="MASE",
-    models=MODEL_GRID
+# Initialize the lab
+sflab = StatsForecastLab(
+    freq="h",             # Hourly frequency
+    normalization=True,   # Data get normalized
 )
 
-# Run full experiment
-lab.cross_validate()
+# Run cross-validation grid search
+sflab.cross_validation()
 
-# Review results
-results = lab.summary()
-print(results.sort_values("MASE").head(10))
+# Inspect model comparison summary
+sflab.best_results_metric_dataframe(unique_ids=cnsts.JCUIds)
+sflab.summary()
 
-# Generate and visualize best-model forecast
-forecast = lab.predict()
-lab.plot()
+# Generate forecast with the best-selected model
+sflab.predict()
+
+# Visualize results - Forecast
+sflab.best_results_plots(
+    horizon=72, 
+    result="forecast", 
+    actual=True, 
+    eval_horizon=1, 
+    unique_ids=cnsts.JCUIds
+)
+
+# Visualize results - Cross Validation
+sflab.best_results_plots(
+    horizon=72, 
+    result="crossval", 
+    actual=True, 
+    eval_horizon=1, 
+    unique_ids=cnsts.JCUIds
+)
+
+# Visualize results - Metrics
+sflab.best_results_plots(
+    horizon=72, 
+    result="metrics", 
+    unique_ids=cnsts.JCUIds
+)
 ```
 
 Sample output from `summary()`:
