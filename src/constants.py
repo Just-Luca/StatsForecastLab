@@ -11,7 +11,7 @@ DATA_PATH = Path.cwd().parent / "StatsForecast" / "data" / "ETTh.csv"
 DATA_NAME = "ETTh"  # @TODO: this should be automatically extracted from the DATA_PATH
 
 # just_cool_unique_ids
-JCUIds = ["HUFL", "HULL", "LUFL", "MUFL"]
+JCUIds = ["HUFL", "LUFL", "MUFL", "MULL"]
 
 # (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
 FREQUENCIES = [

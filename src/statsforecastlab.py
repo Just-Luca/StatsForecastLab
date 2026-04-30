@@ -164,8 +164,8 @@ class StatsForecastLab:
                 output_path = self._get_best_forecast_path(horizon)
 
                 if output_path.is_file():
-                    print(f"File already exists at {output_path}, skipping computation.")
-                    return 
+                    print(f"File already exists at {os.path.relpath(output_path)}, skipping computation.")
+                    continue 
 
                 forecast_fragments: list[pd.DataFrame] = []
                 
@@ -178,12 +178,14 @@ class StatsForecastLab:
 
                 for (best_model, transformation), group_df in groups:
 
+                    model_obj = gsp.MODEL_REGISTRY[best_model]
+
                     unique_ids_in_group = group_df["unique_id"].tolist()
 
                     df_train, _, _, sf, _ = self._train_loop(
                         horizon=horizon,
                         transformation=transformation,
-                        model=best_model,
+                        model=model_obj,
                     )
 
                     df_train_group = df_train[df_train["unique_id"].isin(unique_ids_in_group)]
@@ -225,13 +227,15 @@ class StatsForecastLab:
         # crossvalidation (cv) is needed to decide which model is the best. 
         # but, if there is only one model, then cv is kinda useless.
         # NB: this function does not work if cv is not performed. @TODO We need to adjust this!
-
         df_crossval = self.best_results_prediction_dataframe(
             horizon=horizon,
             result='crossval',
             metric=metric,
             unique_ids=unique_ids
         )
+
+        # df_crossval = df_crossval.assign(ds=lambda x: pd.to_datetime(x["ds"]))
+        # df_crossval = df_crossval.assign(cutoff=lambda x: pd.to_datetime(x["cutoff"]))
 
         match result:
             case 'forecast':
@@ -248,8 +252,10 @@ class StatsForecastLab:
                         actual=actual
                     )
                 else:
+                    _df_forecast=pd.read_csv(self._get_best_forecast_path(horizon))
+
                     return self._plot_forecast(
-                        df_forecast=pd.read_csv(self._get_best_forecast_path(horizon)), 
+                        df_forecast = _df_forecast[_df_forecast['unique_id'].isin(unique_ids)],
                         df_crossval=df_crossval,
                         eval_horizon=eval_horizon, 
                         actual=actual
@@ -602,6 +608,7 @@ class StatsForecastLab:
         else:
             output_path = Path(cnsts.CSV_FOLDER / f"horizon={horizon}" / "best_forecast.csv")
         return output_path
+    
 
     # @TODO: maybe I want to insert an unique_id filter here, so that one can decide which series train
     def _train_loop(
@@ -819,6 +826,7 @@ class StatsForecastLab:
 
             min_date = df_crossval.query(f"unique_id == '{unique_id}'")["ds"].min()
             max_date = df_crossval.query(f"unique_id == '{unique_id}'")["ds"].max()
+            print(f"Unique_id: {unique_id}, min_date: {min_date}, max_date: {max_date}")
 
             data_list.append(
                 {

@@ -15,8 +15,8 @@ from statsforecast.models import (
 
 HORIZONS = [
     72,
-    # 48,
-    # 24,
+    48,
+    24,
 ]
 
 # @TODO: lb_days and horizons should be calculated automatically
@@ -25,10 +25,10 @@ LB_DAYS = 1* 12 * 20 * 24   # (years * months * days * hours) # @TODO: forse it 
 
 TRANSFORMATIONS = [
     # "log", 
-    # "root3", 
+    "root3", 
     # "outl+log", 
     # "outl+root3", 
-    # "outl", 
+    "outl", 
     "identity"
 ]
 
@@ -50,6 +50,16 @@ MODELS = [
     # GARCH(2,1),
     # GARCH(2,2)
 ]
+
+MODEL_REGISTRY = {
+    "Naive": Naive(),
+    "ARIMA": ARIMA((3,1,5), alias="ARIMA"),
+    "ARIMA_sl24": ARIMA(season_length=24, alias="ARIMA_sl24"),
+    "AutoARIMA": AutoARIMA(seasonal=False),
+    "AutoARIMA_sl24": AutoARIMA(season_length=24, alias="AutoARIMA_sl24"),
+    "AutoETS": AutoETS(alias="AutoETS"),
+    "AutoETS_sl24": AutoETS(season_length=24, alias="AutoETS_sl24"),
+}
 
 # n_series = 16
 
